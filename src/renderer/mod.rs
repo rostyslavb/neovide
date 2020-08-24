@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use log::trace;
 use skulpin::skia_safe::gpu::SurfaceOrigin;
-use skulpin::skia_safe::{colors, dash_path_effect, Budgeted, Canvas, Paint, Rect, Surface};
+use skulpin::skia_safe::{colors, dash_path_effect, Budgeted, Canvas, Paint, Rect, Surface, SurfaceProps, PixelGeometry, SurfacePropsFlags, FilterQuality};
 use skulpin::CoordinateSystemHelper;
 
 mod caching_shaper;
@@ -30,6 +30,8 @@ impl Renderer {
         let surface = None;
         let mut paint = Paint::new(colors::WHITE, None);
         paint.set_anti_alias(false);
+        // paint.set_dither(true);
+        paint.set_filter_quality(FilterQuality::High);
 
         let mut shaper = CachingShaper::new();
 
@@ -180,18 +182,22 @@ impl Renderer {
             let budgeted = Budgeted::YES;
             let image_info = gpu_canvas.image_info();
             let surface_origin = SurfaceOrigin::TopLeft;
+            let surface_props = SurfaceProps::new(SurfacePropsFlags::default(), PixelGeometry::Unknown);
             let mut surface = Surface::new_render_target(
                 &mut context,
                 budgeted,
                 &image_info,
                 None,
                 surface_origin,
-                None,
-                None,
+                Some(&surface_props),
+                Some(true),
             )
             .expect("Could not create surface");
             let canvas = surface.canvas();
             canvas.clear(default_style.colors.background.clone().unwrap().to_color());
+
+            // println!("{:?}", surface.props().pixel_geometry());
+
             surface
         });
 
